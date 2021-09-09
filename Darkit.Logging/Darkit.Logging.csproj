@@ -39,7 +39,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DefaultLogCleaner.cs" />
     <Compile Include="DefaultLogger.cs" />
+    <Compile Include="ILogCleaner.cs" />
     <Compile Include="ILogger.cs" />
     <Compile Include="Log.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

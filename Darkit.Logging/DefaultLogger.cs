@@ -6,21 +6,42 @@ using System.IO;
 
 namespace Darkit.Logging
 {
+    /// <summary>
+    /// 默认日志器
+    /// </summary>
     public class DefaultLogger : ILogger
     {
         public int Size { get; private set; }
         public string Folder { get; private set; }
         public string Suffix { get; private set; }
         public List<string> Contents { get; private set; }
+        public ILogCleaner Cleaner { get; private set; }
+        public TimeSpan CleanSpan { get; private set; }
+        public DateTime CleanTime { get; private set; }
 
-        public DefaultLogger(string suffix = "log", string folder=null, int size = 2000000)
+        /// <summary>
+        /// 初始化。
+        /// </summary>
+        /// <param name="suffix"></param>
+        /// <param name="folder"></param>
+        /// <param name="size"></param>
+        /// <param name="cleaner"></param>
+        public DefaultLogger(string suffix = "log", string folder=null, int size = 2000000, ILogCleaner cleaner=null, TimeSpan? cleanSpan=null)
         {
             Size = size;
             Suffix = suffix;
             Folder = Folder ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "log");
             Contents = new List<string>();
+            Cleaner = cleaner ?? new DefaultLogCleaner(Folder, Suffix);
+            CleanSpan = cleanSpan ?? TimeSpan.FromDays(1);
+            CleanTime = DateTime.Now;
         }
 
+        /// <summary>
+        /// 写入日志到内存。
+        /// </summary>
+        /// <param name="level"></param>
+        /// <param name="message"></param>
         public void Record(string level, string message)
         {
             lock (Contents)
@@ -30,6 +51,9 @@ namespace Darkit.Logging
             }
         }
 
+        /// <summary>
+        /// 落盘刷新。
+        /// </summary>
         public void Flush()
         {
             if (!Directory.Exists(Folder))
@@ -61,6 +85,13 @@ namespace Darkit.Logging
                         stream.Write(data, 0, data.Length);
                     }
                     Contents.Clear();
+                }
+
+                // 日志清理
+                if (CleanTime <= DateTime.Now)
+                {
+                    Cleaner.Clear();
+                    CleanTime = DateTime.Now + CleanSpan;
                 }
             }
         }
